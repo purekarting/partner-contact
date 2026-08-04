@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2026-02-17 08:30+0000\n"
+"PO-Revision-Date: 2026-07-20 06:19+0000\n"
 "Last-Translator: mymage <stefano.consolaro@mymage.it>\n"
 "Language-Team: none\n"
 "Language: it\n"
@@ -57,18 +57,6 @@ msgid "Tax ID"
 msgstr "Partita IVA"
 
 #. module: partner_vat_unique
-#: model:ir.model.fields,help:partner_vat_unique.field_res_partner__vat
-#: model:ir.model.fields,help:partner_vat_unique.field_res_users__vat
-msgid ""
-"The Tax Identification Number. Values here will be validated based on the "
-"country format. You can use '/' to indicate that the partner is not subject "
-"to tax."
-msgstr ""
-"Il numero identificazione imposta. I valori verranno validati nel formato "
-"della nazione. Si può utilizzare '/' per indicare che il partner non è "
-"soggetto all'imposta."
-
-#. module: partner_vat_unique
 #. odoo-python
 #: code:addons/partner_vat_unique/models/res_partner.py:0
 msgid "The VAT %(vat)s already exists in another partner."
@@ -78,6 +66,21 @@ msgstr "La partita IVA %(vat)s è già assegnata ad un altro partner."
 #: model:ir.model.fields,field_description:partner_vat_unique.field_res_config_settings__partner_vat_unique
 msgid "Unique VAT Constraint"
 msgstr "Vincolo partita IVA univoca"
+
+#. module: partner_vat_unique
+#: model:ir.model.fields,help:partner_vat_unique.field_res_partner__vat
+#: model:ir.model.fields,help:partner_vat_unique.field_res_users__vat
+msgid "You can use '/' to indicate that the customer has no Tax ID."
+msgstr "Si può utilizzare '/' per indicare che il cliente non ha partita IVA."
+
+#~ msgid ""
+#~ "The Tax Identification Number. Values here will be validated based on the "
+#~ "country format. You can use '/' to indicate that the partner is not "
+#~ "subject to tax."
+#~ msgstr ""
+#~ "Il numero identificazione imposta. I valori verranno validati nel formato "
+#~ "della nazione. Si può utilizzare '/' per indicare che il partner non è "
+#~ "soggetto all'imposta."
 
 #~ msgid "Contact"
 #~ msgstr "Contatto"
