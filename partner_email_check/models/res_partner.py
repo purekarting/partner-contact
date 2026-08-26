@@ -1,6 +1,8 @@
 # Copyright 2019 Komit <https://komit-consulting.com>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+from email.utils import getaddresses
+
 from email_validator import EmailSyntaxError, EmailUndeliverableError, validate_email
 
 from odoo import api, models
@@ -20,10 +22,36 @@ class ResPartner(models.Model):
     @api.model
     def email_check(self, emails):
         return ",".join(
-            self._normalize_email(email.strip())
-            for email in emails.split(",")
-            if email.strip()
+            self._normalize_email(email) for email in self._email_check_split(emails)
         )
+
+    @api.model
+    def _email_check_split(self, emails):
+        """Split a possibly multi-address field value into single addresses.
+
+        RFC 5322 lets a display name contain a comma, and Outlook's default
+        "Last, First" format uses one, so a plain ``emails.split(",")`` tears
+        ``"Silva, Klaire" <k@example.com>`` into the two invalid fragments
+        ``"Silva`` and ``Klaire" <k@example.com>``. That matters beyond typing:
+        the mail gateway feeds raw ``From`` headers into this field, so a
+        contact whose name holds a comma made inbound mail unprocessable.
+
+        ``getaddresses`` parses quoting properly, but it answers a malformed
+        value with a single empty address and drops the rest of the input with
+        it -- so when it yields nothing usable, fall back to the naive split.
+        That keeps a bad address reported as itself instead of as the whole
+        field value.
+        """
+        if not emails or not emails.strip():
+            return []
+        parsed = [
+            address.strip()
+            for _name, address in getaddresses([emails])
+            if address.strip()
+        ]
+        if parsed:
+            return parsed
+        return [fragment.strip() for fragment in emails.split(",") if fragment.strip()]
 
     @api.constrains("email")
     def _check_email_unique(self):
