@@ -65,6 +65,38 @@ class TestPartnerEmailCheck(TransactionCase):
             "You".lower() + "@mail.net," + "mE".lower() + "@mail.com",
         )
 
+    def test_display_name_with_comma(self):
+        """A display name may hold a comma; it is not an address separator.
+
+        Outlook sends "Last, First" by default, and the mail gateway writes
+        raw From headers into this field, so splitting on the bare comma made
+        inbound mail from such contacts unprocessable.
+        """
+        self.test_partner.email = '"Silva, Klaire" <KSilva@vtaig.com>'
+        self.assertEqual(self.test_partner.email, "ksilva@vtaig.com")
+
+    def test_multiple_display_names_with_commas(self):
+        """Several quoted display names, each with a comma, still split."""
+        self.test_partner.email = '"Doe, John" <j@domain.com>, "Roe, Jane" <r@domain.com>'
+        self.assertEqual(self.test_partner.email, "j@domain.com,r@domain.com")
+
+    def test_formatted_address_stores_bare_address(self):
+        """The display name is dropped: this field holds addresses, the name
+        lives on the partner."""
+        self.test_partner.email = "Klaire Silva <ksilva@vtaig.com>"
+        self.assertEqual(self.test_partner.email, "ksilva@vtaig.com")
+
+    def test_bad_email_reports_the_offending_fragment(self):
+        """A malformed value is reported as itself, not as the whole field."""
+        with self.assertRaises(ValidationError) as caught:
+            self.test_partner.email = "good@domain.com,bad@email@domain..com"
+        self.assertIn("bad@email@domain..com", str(caught.exception))
+        self.assertNotIn("good@domain.com", str(caught.exception))
+
+    def test_blank_email_check_is_empty(self):
+        """Whitespace yields no addresses rather than an error."""
+        self.assertEqual(self.env["res.partner"].email_check("   "), "")
+
     def disallow_duplicates(self):
         self.env.company.partner_email_check_filter_duplicates = True
 
