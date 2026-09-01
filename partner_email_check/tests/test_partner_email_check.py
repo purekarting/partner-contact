@@ -77,7 +77,9 @@ class TestPartnerEmailCheck(TransactionCase):
 
     def test_multiple_display_names_with_commas(self):
         """Several quoted display names, each with a comma, still split."""
-        self.test_partner.email = '"Doe, John" <j@domain.com>, "Roe, Jane" <r@domain.com>'
+        self.test_partner.email = (
+            '"Doe, John" <j@domain.com>, "Roe, Jane" <r@domain.com>'
+        )
         self.assertEqual(self.test_partner.email, "j@domain.com,r@domain.com")
 
     def test_formatted_address_stores_bare_address(self):
@@ -96,6 +98,51 @@ class TestPartnerEmailCheck(TransactionCase):
     def test_blank_email_check_is_empty(self):
         """Whitespace yields no addresses rather than an error."""
         self.assertEqual(self.env["res.partner"].email_check("   "), "")
+
+    def test_skip_duplicates_context(self):
+        """The gateway records addresses it did not collect from a user, so a
+        sender colliding with an existing contact must not be able to stop
+        mail from being delivered."""
+        self.disallow_duplicates()
+        self.test_partner.write({"email": "email@domain.tld"})
+        created = (
+            self.env["res.partner"]
+            .with_context(partner_email_check_skip_duplicates=True)
+            .create({"name": "gateway sender", "email": "email@domain.tld"})
+        )
+        self.assertEqual(created.email, "email@domain.tld")
+
+    def test_syntax_setting_comes_from_the_record_company(self):
+        """Validation of a record's own data follows its own company.
+
+        The mail gateway runs as a service user whose default company has
+        nothing to do with the contact being created, so reading the setting
+        from ``env.company`` judges one company's data by another's rules.
+
+        Duplicate filtering deliberately does *not* work this way -- see
+        ``_should_filter_duplicates``: "across all companies" has to mean the
+        whole database, or a company with filtering off becomes a place to
+        park addresses another company has claimed.
+        """
+        lax = self.env["res.company"].create(
+            {"name": "Lax Co", "partner_email_check_syntax": False}
+        )
+        self.env.company.partner_email_check_syntax = True
+        self.assertNotEqual(self.env.company, lax)
+
+        tolerated = self.env["res.partner"].create(
+            {"name": "lax", "email": "not an address", "company_id": lax.id}
+        )
+        self.assertEqual(tolerated.email, "not an address")
+
+        with self.assertRaises(ValidationError):
+            self.env["res.partner"].create(
+                {
+                    "name": "strict",
+                    "email": "bad@email@domain..com",
+                    "company_id": self.env.company.id,
+                }
+            )
 
     def disallow_duplicates(self):
         self.env.company.partner_email_check_filter_duplicates = True

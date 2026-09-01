@@ -3,7 +3,7 @@
 
 {
     "name": "Email Format Checker",
-    "version": "19.0.2.2.0",
+    "version": "19.0.2.3.0",
     "summary": "Validate email address field",
     "author": "Komit, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/partner-contact",
